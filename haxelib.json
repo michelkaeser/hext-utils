@@ -1,0 +1,16 @@
+{
+    "name": "hext-utils",
+    "url" : "",
+    "license": "MIT",
+    "tags": ["hext", "utils", "helpers", "retry"],
+    "description": "A collection of tiny helper and utility classes for Hext.",
+    "classPath": "src",
+    "dependencies": {
+        "hext-core": ""
+    },
+    "version": "0.0.0",
+    "releasenote": "",
+    "contributors": [
+        "MaddinXx"
+    ]
+}
