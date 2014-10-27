@@ -1,10 +1,9 @@
 package hext.utils;
 
 import haxe.Constraints.Function;
-import hext.IllegalArgumentException;
 import hext.threading.Atomic;
+import hext.utils.RetryConditionFailedException;
 import hext.utils.RetryHandlerAbortedException;
-import hext.utils.RetryLimitReachedException;
 
 /**
  * Generic wrapper that can be placed around functions throwing Exceptions to
@@ -22,7 +21,7 @@ import hext.utils.RetryLimitReachedException;
 class RetryHandler<T>
 {
     /**
-     * Stores either 'effort' should stop after the current retry.
+     * Stores if 'effort' should stop after the current retry.
      *
      * @var hext.threading.Atomic<Bool>
      */
@@ -68,44 +67,40 @@ class RetryHandler<T>
     }
 
     /**
-     * Executes the wrapped function up to 'retries' time.
+     * Calls the wrapped function until it either returns successfully or
+     * the handler is aborted or interrupted.
      *
-     * Note: The 'timeout' parameter is ignored on non-Sys targets.
+     * Note: The 'timeout' argument is ignored on non-Sys targets.
      *
-     * @param Int   retries the max number of retries
-     * @param Float timeout a timeout to wait before trying again after a failure
+     * @param hext.utils.RetryCondition condition the condition function to call after
+     *                                  a failure
+     * @param Float                     timeout the time to wait between two tries
      *
-     * @return T
-     *
-     * @throws hext.utils.IllegalArgumentException     if 'retries' if less than 1
-     * @throws hext.utils.RetryLimitReachedException   if the function doesn't return successfully after 'retries' retries
-     * @throws hext.utils.RetryHandlerAbortedException if the abort call has ended the retry loop
+     * @return T the function's return value
      */
-    public function effort(retries:Int, timeout:Float = 0.0):T
+    public function effort(condition:RetryCondition, timeout:Float = 0.0):T
     {
-        if (retries <= 0) {
-            throw new IllegalArgumentException("Number of retries cannot be 0 or less.");
-        }
-
         this.aborted.val = false;
-        var i:Int = 0;
-        while (!this.aborted.val && i < retries) {
+        var i:Int        = 0;
+        var ex:Dynamic   = null;
+        do {
             try {
                 return Reflect.callMethod(this, this.fn, this.args);
-            } catch (ex:Dynamic) {
-                if (i == retries - 1) {
-                    throw new RetryLimitReachedException(ex);
-                }
-
+            } catch (err:Dynamic) {
+                ex = err;
+                ++i;
                 #if sys
                     if (timeout > 0.0) {
                         Sys.sleep(timeout);
                     }
                 #end
             }
-            ++i;
-        }
+        } while (!this.aborted.val && condition(i, ex) /* might throw exceptions */);
 
-        throw new RetryHandlerAbortedException();
+        if (this.aborted.val) {
+            throw new RetryHandlerAbortedException();
+        } else {
+            throw new RetryConditionFailedException();
+        }
     }
 }

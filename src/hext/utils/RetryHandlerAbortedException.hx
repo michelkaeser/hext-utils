@@ -12,7 +12,7 @@ class RetryHandlerAbortedException extends RetryHandlerException
     /**
      * @{inherit}
      */
-    public function new(msg:Dynamic = "Retry handler has been aborted.", ?info:PosInfos):Void
+    public function new(msg:Dynamic = "RetryHandler has been aborted.", ?info:PosInfos):Void
     {
         super(msg, info);
     }
