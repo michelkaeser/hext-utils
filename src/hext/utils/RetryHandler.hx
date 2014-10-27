@@ -84,16 +84,16 @@ class RetryHandler<T>
         var i:Int        = 0;
         var ex:Dynamic   = null;
         do {
+            #if sys
+                if (i != 0 && timeout > 0.0) {
+                    Sys.sleep(timeout);
+                }
+            #end
             try {
                 return Reflect.callMethod(this, this.fn, this.args);
             } catch (err:Dynamic) {
                 ex = err;
                 ++i;
-                #if sys
-                    if (timeout > 0.0) {
-                        Sys.sleep(timeout);
-                    }
-                #end
             }
         } while (!this.aborted.val && condition(i, ex) /* might throw exceptions */);
 
