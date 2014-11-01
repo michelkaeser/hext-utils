@@ -98,9 +98,9 @@ class RetryHandler<T>
         } while (!this.aborted.val && condition(i, ex) /* might throw exceptions */);
 
         if (this.aborted.val) {
-            throw new RetryHandlerAbortedException();
+            throw new RetryHandlerAbortedException(ex);
         } else {
-            throw new RetryConditionFailedException();
+            throw new RetryConditionFailedException(ex);
         }
     }
 }
